@@ -1,0 +1,58 @@
+---
+title: "CXC 2020 Homework five"
+date: 4/11/2021
+author: Renee Zale
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readxl)
+CXC2020 <- read_excel("C:/Users/rzale/OneDrive - com/Desktop/UMass/cxc_2020_for hw.xlsx")
+library(tidyverse)
+library(dplyr) 
+library(ggplot2)
+```
+
+The following data comes from [The Customer Experience Code (CXC)](https://cspace.com/customerexperienced/), an annual benchmarking study conducted by C Space that evaluates the performance of 183 popular brands across 18 industries. The data comes from a survey fielded to 13,926 consumers, who were each asked to evaluate two brands against a series of proprietary metrics designed to measure how well brands connect with their customers. Past C Space research has proven that these measures are key drivers of growth for brands. Respondents also evaluated the brands on Net Promoter Score (NPS) and [Earned Advocacy Score](https://hbr.org/2019/10/where-net-promoter-score-goes-wrong#:~:text=By%20taking%20the%20percentage%20of,%2C%20and%20more%2Dactionable%20data.), a proprietary metric developed by C Space as an alternative to NPS. 
+
+In my analysis of this dataset I would like to understand which CXC statements are have the strongest relationship with NPS score. My hypothesis is that specific statements will have stronger influence on NPS than others, but overall they will all have a positive relationship with NPS. First I will create a correlation matrix to understand the relationships between all of the statements and NPS.
+
+```{r correlation, echo=FALSE}
+NPScor <- cor(CXC2020$NPS, CXC2020[4:37])
+round(NPScor, 2)
+```
+By looking at the correlation table we can see that all of the correlations are positive, meaning the higher brands are rated on these statements, the higher their NPS score. We can see that most of the statements have a correlation of around .6. A few have lower correlations ("Puts my needs first," "Appreciates loyalty," "Uses my personal data," and "Doing enough to stop the spread of COVID"). The statement "I trust this company" is most highly correlated with NPS. I ran a linear model to see whether there is a relationship between NPS (dependent variable) and the respondents' level of agreement with the statement 'I trust this company.'
+
+```{r linearmodel, echo=FALSE}
+NPSlin <- lm(CXC2020$NPS ~ CXC2020$`I trust this company`)
+summary(NPSlin)
+```
+We can see that this is a positive and highly significant relationship between the two variables. I plotted the distribution of the 'I trust this company' rating versus NPS, but was not able to get a meaningful chart. *Note: I tried to install the hexbin package but R Studio couldn't find it. I believe this could have provided a more meaningful graphic.*
+
+```{r plotlinearmodel, echo=FALSE}
+ggplot(data = CXC2020, aes(x=`NPS`, y= `I trust this company`)) +
+         geom_point(aes(size = 'NPS'))
+```
+
+However, when I added a linear model trendline, we can clearly see what looks to be a linear relationship, as ratings for 'I trust this company' increase as NPS scores increase. 
+
+```{r predictiongrid, echo=FALSE}
+ggplot(CXC2020, aes(x = NPS, y = `I trust this company`)) + 
+  geom_point() +
+  stat_smooth(method = "lm", col = "red")
+```
+
+I then used a boxplot to take a closer look at the distribution of ratings for 'I trust this company' across NPS scores.
+
+```{r boxplot, echo=FALSE}
+ggplot(CXC2020, aes(`NPS`, `I trust this company`)) + 
+  geom_boxplot(aes(group=NPS))
+```
+
+Finally, I made one more visualization to better understand how the data is distributed and the relationship between NPS and trust in a company. This spine chart accounts for the proportion of respondetns who fall into each combination of NPS and trust ratings. We can see that among those who rated NPS as a 10, about half of them also rated the brand a 10 on trust. 
+
+
+``` {r counts, echo=FALSE}
+spineplot(factor(CXC2020$`I trust this company`)~factor(CXC2020$NPS))
+```
